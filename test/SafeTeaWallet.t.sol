@@ -99,6 +99,7 @@ contract SafeTeaWalletTest is Test {
         vm.expectRevert("Zero address");
         new SafeTeaWallet(invalidOwners, address(factory));
     }
+
     function testConstructorWithMinimumOwner() public {
         address[] memory invalidOwners = new address[](1);
         invalidOwners[0] = owner1;
