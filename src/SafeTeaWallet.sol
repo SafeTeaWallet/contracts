@@ -47,7 +47,9 @@ contract SafeTeaWallet {
     event TransactionCanceled(uint256 indexed txIndex);
     event TransactionExpired(uint256 indexed txIndex);
 
-    event OwnerProposed(uint256 indexed proposalIndex, address indexed proposedOwner, OwnerProposalType indexed proposalType);
+    event OwnerProposed(
+        uint256 indexed proposalIndex, address indexed proposedOwner, OwnerProposalType indexed proposalType
+    );
     event OwnerProposalConfirmed(uint256 indexed proposalIndex, address indexed owner);
     event OwnerProposalRejected(uint256 indexed proposalIndex, address indexed owner);
     event OwnerAdded(uint256 indexed proposalIndex, address indexed newOwner);
@@ -122,23 +124,25 @@ contract SafeTeaWallet {
         if (_expiry <= block.timestamp || _expiry > block.timestamp + 30 days) revert InvalidExpiry();
 
         txIndex = transactions.length;
-        transactions.push(Transaction({
-            to: to,
-            value: value,
-            data: data,
-            status: 0,
-            confirmations: 0,
-            rejections: 0,
-            expiry: uint32(_expiry),
-            createdAt: uint32(block.timestamp)
-        }));
+        transactions.push(
+            Transaction({
+                to: to,
+                value: value,
+                data: data,
+                status: 0,
+                confirmations: 0,
+                rejections: 0,
+                expiry: uint32(_expiry),
+                createdAt: uint32(block.timestamp)
+            })
+        );
 
         emit TransactionSubmitted(txIndex, to, value);
     }
 
     function confirmTransaction(uint256 txIndex) external onlyOwner validTx(txIndex) {
         if (txVotes[txIndex][msg.sender] != 0) revert AlreadyVoted();
-        
+
         txVotes[txIndex][msg.sender] = 1;
         transactions[txIndex].confirmations++;
 
@@ -151,7 +155,7 @@ contract SafeTeaWallet {
 
     function rejectTransaction(uint256 txIndex) external onlyOwner validTx(txIndex) {
         if (txVotes[txIndex][msg.sender] != 0) revert AlreadyVoted();
-        
+
         txVotes[txIndex][msg.sender] = 2;
         transactions[txIndex].rejections++;
 
@@ -166,7 +170,7 @@ contract SafeTeaWallet {
     function _executeTransaction(uint256 txIndex) internal {
         Transaction storage txn = transactions[txIndex];
         txn.status = 1;
-        
+
         (bool success,) = txn.to.call{value: txn.value}(txn.data);
         if (!success) revert ExecutionFailed();
 
@@ -183,7 +187,7 @@ contract SafeTeaWallet {
         Transaction storage txn = transactions[txIndex];
         if (txn.status != 0) revert AlreadyExecuted();
         if (block.timestamp <= txn.expiry) revert NotExpired();
-        
+
         txn.status = 2;
         emit TransactionExpired(txIndex);
     }
@@ -203,22 +207,24 @@ contract SafeTeaWallet {
         }
 
         proposalIndex = ownerProposals.length;
-        ownerProposals.push(OwnerProposal({
-            proposedOwner: newOwner,
-            status: 0,
-            proposalType: proposalType,
-            confirmations: 0,
-            rejections: 0,
-            expiry: uint32(_expiry),
-            createdAt: uint32(block.timestamp)
-        }));
+        ownerProposals.push(
+            OwnerProposal({
+                proposedOwner: newOwner,
+                status: 0,
+                proposalType: proposalType,
+                confirmations: 0,
+                rejections: 0,
+                expiry: uint32(_expiry),
+                createdAt: uint32(block.timestamp)
+            })
+        );
 
         emit OwnerProposed(proposalIndex, newOwner, proposalType);
     }
 
     function confirmOwnerProposal(uint256 proposalIndex) external onlyOwner validProposal(proposalIndex) {
         if (proposalVotes[proposalIndex][msg.sender] != 0) revert AlreadyVoted();
-        
+
         proposalVotes[proposalIndex][msg.sender] = 1;
         ownerProposals[proposalIndex].confirmations++;
 
@@ -231,7 +237,7 @@ contract SafeTeaWallet {
 
     function rejectOwnerProposal(uint256 proposalIndex) external onlyOwner validProposal(proposalIndex) {
         if (proposalVotes[proposalIndex][msg.sender] != 0) revert AlreadyVoted();
-        
+
         proposalVotes[proposalIndex][msg.sender] = 2;
         ownerProposals[proposalIndex].rejections++;
 
@@ -275,7 +281,7 @@ contract SafeTeaWallet {
         OwnerProposal storage proposal = ownerProposals[proposalIndex];
         if (proposal.status != 0) revert AlreadyExecuted();
         if (block.timestamp <= proposal.expiry) revert NotExpired();
-        
+
         proposal.status = 2;
         emit OwnerProposalExpired(proposalIndex);
     }
@@ -297,27 +303,59 @@ contract SafeTeaWallet {
         return ownerProposals.length;
     }
 
-    function getTransaction(uint256 index) external view returns (
-        address to, uint256 value, bytes memory data, bool executed, bool canceled,
-        uint256 confirmations, uint256 rejections, uint256 expiry, uint256 createdAt
-    ) {
+    function getTransaction(uint256 index)
+        external
+        view
+        returns (
+            address to,
+            uint256 value,
+            bytes memory data,
+            bool executed,
+            bool canceled,
+            uint256 confirmations,
+            uint256 rejections,
+            uint256 expiry,
+            uint256 createdAt
+        )
+    {
         if (index >= transactions.length) revert TxNotExist();
         Transaction storage txn = transactions[index];
         return (
-            txn.to, txn.value, txn.data, txn.status == 1, txn.status == 2,
-            txn.confirmations, txn.rejections, txn.expiry, txn.createdAt
+            txn.to,
+            txn.value,
+            txn.data,
+            txn.status == 1,
+            txn.status == 2,
+            txn.confirmations,
+            txn.rejections,
+            txn.expiry,
+            txn.createdAt
         );
     }
 
-    function getOwnerProposal(uint256 index) external view returns (
-        address proposedOwner, bool executed, bool canceled,
-        uint256 confirmations, uint256 rejections, uint256 expiry, uint256 createdAt
-    ) {
+    function getOwnerProposal(uint256 index)
+        external
+        view
+        returns (
+            address proposedOwner,
+            bool executed,
+            bool canceled,
+            uint256 confirmations,
+            uint256 rejections,
+            uint256 expiry,
+            uint256 createdAt
+        )
+    {
         if (index >= ownerProposals.length) revert ProposalNotExist();
         OwnerProposal storage proposal = ownerProposals[index];
         return (
-            proposal.proposedOwner, proposal.status == 1, proposal.status == 2,
-            proposal.confirmations, proposal.rejections, proposal.expiry, proposal.createdAt
+            proposal.proposedOwner,
+            proposal.status == 1,
+            proposal.status == 2,
+            proposal.confirmations,
+            proposal.rejections,
+            proposal.expiry,
+            proposal.createdAt
         );
     }
 
