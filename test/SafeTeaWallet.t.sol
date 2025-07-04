@@ -63,14 +63,14 @@ contract SafeTeaWalletTest is Test {
         singleOwner[0] = owner1;
         singleOwner[1] = owner2;
 
-        vm.expectRevert("Zero address");
+        vm.expectRevert(SafeTeaWallet.ZeroAddress.selector);
         new SafeTeaWallet(singleOwner, address(0));
     }
 
     function testConstructorWithEmptyOwners() public {
         address[] memory emptyOwners;
 
-        vm.expectRevert("Owners required");
+        vm.expectRevert(SafeTeaWallet.NotUnique.selector);
         new SafeTeaWallet(emptyOwners, address(factory));
     }
 
@@ -78,7 +78,7 @@ contract SafeTeaWalletTest is Test {
         address[] memory singleOwner = new address[](1);
         singleOwner[0] = owner1;
 
-        vm.expectRevert("Minimum 2 owners required for majority voting");
+        vm.expectRevert(SafeTeaWallet.NotUnique.selector);
         new SafeTeaWallet(singleOwner, address(factory));
     }
 
@@ -87,7 +87,7 @@ contract SafeTeaWalletTest is Test {
         duplicateOwners[0] = owner1;
         duplicateOwners[1] = owner1;
 
-        vm.expectRevert("Not unique");
+        vm.expectRevert(SafeTeaWallet.NotUnique.selector);
         new SafeTeaWallet(duplicateOwners, address(factory));
     }
 
@@ -96,7 +96,7 @@ contract SafeTeaWalletTest is Test {
         invalidOwners[0] = owner1;
         invalidOwners[1] = address(0);
 
-        vm.expectRevert("Zero address");
+        vm.expectRevert(SafeTeaWallet.ZeroAddress.selector);
         new SafeTeaWallet(invalidOwners, address(factory));
     }
 
@@ -104,7 +104,7 @@ contract SafeTeaWalletTest is Test {
         address[] memory invalidOwners = new address[](1);
         invalidOwners[0] = owner1;
 
-        vm.expectRevert("Minimum 2 owners required for majority voting");
+        vm.expectRevert(SafeTeaWallet.NotUnique.selector);
         new SafeTeaWallet(invalidOwners, address(factory));
     }
 
@@ -133,18 +133,18 @@ contract SafeTeaWalletTest is Test {
         vm.prank(owner1);
 
         // Past expiry
-        vm.expectRevert("Expiry must be in future");
+        vm.expectRevert(SafeTeaWallet.InvalidExpiry.selector);
         wallet.submitTransaction(recipient, 1 ether, "", block.timestamp - 1);
 
         vm.prank(owner1);
         // Too far in future
-        vm.expectRevert("Expiry too far in future");
+        vm.expectRevert(SafeTeaWallet.InvalidExpiry.selector);
         wallet.submitTransaction(recipient, 1 ether, "", block.timestamp + 31 days);
     }
 
     function testSubmitTransactionByNonOwner() public {
         vm.prank(nonOwner);
-        vm.expectRevert("Not owner");
+        vm.expectRevert(SafeTeaWallet.NotOwner.selector);
         wallet.submitTransaction(recipient, 1 ether, "", block.timestamp + 1 days);
     }
 
@@ -251,7 +251,7 @@ contract SafeTeaWalletTest is Test {
 
         // Try to execute
         vm.prank(owner1);
-        vm.expectRevert("Not enough confirmations");
+        vm.expectRevert(SafeTeaWallet.InsufficientConfirmations.selector);
         wallet.executeTransaction(txIndex);
     }
 
@@ -278,7 +278,7 @@ contract SafeTeaWalletTest is Test {
         uint256 txIndex = wallet.submitTransaction(recipient, 1 ether, "", block.timestamp + 1 days);
 
         // Try to mark as expired
-        vm.expectRevert("Not expired yet");
+        vm.expectRevert(SafeTeaWallet.NotExpired.selector);
         wallet.markTransactionExpired(txIndex);
     }
 
@@ -309,27 +309,27 @@ contract SafeTeaWalletTest is Test {
     function testProposeOwnerInvalid() public {
         // Propose existing owner
         vm.prank(owner1);
-        vm.expectRevert("Already an owner");
+        vm.expectRevert(SafeTeaWallet.AlreadyOwner.selector);
         wallet.proposeOwner(owner2, SafeTeaWallet.OwnerProposalType.Add, block.timestamp + 7 days);
 
         // Propose non-owner for removal
         address anotherNonOwner = address(0x123);
         vm.prank(owner1);
-        vm.expectRevert("Not an owner");
+        vm.expectRevert(SafeTeaWallet.NotAnOwner.selector);
         wallet.proposeOwner(anotherNonOwner, SafeTeaWallet.OwnerProposalType.Remove, block.timestamp + 7 days);
 
         // Propose zero address
         vm.prank(owner1);
-        vm.expectRevert("Zero address");
+        vm.expectRevert(SafeTeaWallet.ZeroAddress.selector);
         wallet.proposeOwner(address(0), SafeTeaWallet.OwnerProposalType.Add, block.timestamp + 7 days);
 
         // Invalid expiry
         vm.prank(owner1);
-        vm.expectRevert("Expiry must be in future");
+        vm.expectRevert(SafeTeaWallet.InvalidExpiry.selector);
         wallet.proposeOwner(address(0x123), SafeTeaWallet.OwnerProposalType.Add, block.timestamp - 1);
 
         vm.prank(owner1);
-        vm.expectRevert("Expiry too far in future");
+        vm.expectRevert(SafeTeaWallet.InvalidExpiry.selector);
         wallet.proposeOwner(address(0x123), SafeTeaWallet.OwnerProposalType.Add, block.timestamp + 31 days);
     }
 
@@ -463,7 +463,7 @@ contract SafeTeaWalletTest is Test {
         vm.stopPrank();
 
         vm.prank(owner2);
-        vm.expectRevert("Not owner");
+        vm.expectRevert(SafeTeaWallet.NotOwner.selector);
         wallet.confirmOwnerProposal(proposal1);
 
         // Now try to remove owner3 (would leave only owner1)
@@ -477,7 +477,7 @@ contract SafeTeaWalletTest is Test {
 
         // Confirm by owner3 (should fail)
         vm.prank(owner3);
-        vm.expectRevert("Cannot remove last owner");
+        vm.expectRevert(SafeTeaWallet.CannotRemoveLastOwner.selector);
         wallet.confirmOwnerProposal(proposal2);
     }
 
@@ -531,12 +531,12 @@ contract SafeTeaWalletTest is Test {
 
         // Try to confirm again
         vm.prank(owner1);
-        vm.expectRevert("Already confirmed");
+        vm.expectRevert(SafeTeaWallet.AlreadyVoted.selector);
         wallet.confirmTransaction(txIndex);
 
         // Try to reject after confirming
         vm.prank(owner1);
-        vm.expectRevert("Already confirmed");
+        vm.expectRevert(SafeTeaWallet.AlreadyVoted.selector);
         wallet.rejectTransaction(txIndex);
     }
 
@@ -551,12 +551,12 @@ contract SafeTeaWalletTest is Test {
 
         // Try to confirm again
         vm.prank(owner1);
-        vm.expectRevert("Already confirmed");
+        vm.expectRevert(SafeTeaWallet.AlreadyVoted.selector);
         wallet.confirmOwnerProposal(proposalIndex);
 
         // Try to reject after confirming
         vm.prank(owner1);
-        vm.expectRevert("Already confirmed");
+        vm.expectRevert(SafeTeaWallet.AlreadyVoted.selector);
         wallet.rejectOwnerProposal(proposalIndex);
     }
 
@@ -570,12 +570,12 @@ contract SafeTeaWalletTest is Test {
         vm.prank(owner2);
         wallet.rejectTransaction(txIndex);
         vm.prank(owner3);
-        vm.expectRevert("Already canceled");
+        vm.expectRevert(SafeTeaWallet.AlreadyExecuted.selector);
         wallet.rejectTransaction(txIndex);
 
         // Try to execute
         vm.prank(owner1);
-        vm.expectRevert("Already canceled");
+        vm.expectRevert(SafeTeaWallet.AlreadyExecuted.selector);
         wallet.executeTransaction(txIndex);
     }
 
@@ -588,7 +588,7 @@ contract SafeTeaWalletTest is Test {
 
         // Try to execute
         vm.prank(owner1);
-        vm.expectRevert("Transaction expired");
+        vm.expectRevert(SafeTeaWallet.Expired.selector);
         wallet.executeTransaction(txIndex);
     }
 

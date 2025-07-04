@@ -130,7 +130,7 @@ contract SafeTeaFactoryTest is Test {
     function testCreateWalletWithEmptyOwners() public {
         address[] memory emptyOwners;
 
-        vm.expectRevert("Owners required");
+        vm.expectRevert(SafeTeaWallet.NotUnique.selector);
         factory.createWallet(emptyOwners);
     }
 
