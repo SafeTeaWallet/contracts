@@ -1,66 +1,60 @@
-## Foundry
+SafeTea Smart Contracts
+=======================
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+SafeTea is a minimal, secure, and gas-efficient multi-signature wallet built with Solidity and tested using Foundry. It allows multiple owners to manage ETH and ERC20 assets with on-chain proposal and confirmation workflows.
 
-Foundry consists of:
+Features
+--------
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+*   Multi-owner governance
+*   Proposal system for ETH and ERC20 transfers
+*   Owner addition/removal with confirmations
+*   Proposal expiration for time-based safety
+*   Gas-optimized Solidity code
 
-## Documentation
+Tech Stack
+----------
 
-https://book.getfoundry.sh/
+*   Solidity ^0.8.0
+*   [Foundry](https://book.getfoundry.sh/) for testing
+*   Minimal dependencies (no full OpenZeppelin required)
 
-## Usage
+Setup
+-----
 
-### Build
+    git clone https://github.com/yourusername/safetea-wallet.git
+    cd safetea-wallet
+    forge install
+    forge build
+    forge test
 
-```shell
-$ forge build
-```
+Contracts
+---------
 
-### Test
+*   `SafeTea.sol` – Core multisig wallet logic
+*   `ISafeTeaFactory.sol` – Interface for wallet factory
+*   `SafeTeaFactory.sol` – Factory to deploy new SafeTea wallets
 
-```shell
-$ forge test
-```
+Testing
+-------
 
-### Format
+    forge test --coverage
 
-```shell
-$ forge fmt
-```
+Includes unit tests for:
 
-### Gas Snapshots
+*   ETH transfers
+*   ERC20 token transfers
+*   Owner proposals and confirmations
+*   Execution and expiration handling
 
-```shell
-$ forge snapshot
-```
+Security Considerations
+-----------------------
 
-### Anvil
+*   Reentrancy-safe proposal execution
+*   On-chain validation and access control
+*   Transparent events for every proposal
 
-```shell
-$ anvil
-```
+License
+-------
 
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+MIT © 2025 SafeTea Team
